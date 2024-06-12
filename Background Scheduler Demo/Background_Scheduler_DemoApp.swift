@@ -8,10 +8,40 @@
 import SwiftUI
 
 @main
-struct Background_Scheduler_DemoApp: App {
-    var body: some Scene {
-        WindowGroup {
+struct Background_Scheduler_DemoApp: App
+{
+    @State var mutableVariable: Bool = true
+
+    let scheduler: NSBackgroundActivityScheduler =
+    {
+        var scheduler: NSBackgroundActivityScheduler = .init(identifier: "com.davidbures.updater")
+        scheduler.repeats = true
+        scheduler.interval = 1 * 60
+        scheduler.tolerance = 30
+        return scheduler
+    }()
+
+    var body: some Scene
+    {
+        WindowGroup
+        {
             ContentView()
+                .onAppear
+                {
+                    scheduler.schedule
+                    { (completion: NSBackgroundActivityScheduler.CompletionHandler) in
+                        Task(priority: .background)
+                        {
+                            mutableVariable = false // Error
+                            await changeValueOfMutableVar(to: false) // No Error
+                        }
+                    }
+                }
         }
+    }
+    
+    private func changeValueOfMutableVar(to newValue: Bool)
+    {
+        self.mutableVariable = newValue
     }
 }
